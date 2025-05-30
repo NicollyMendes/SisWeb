@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView, View
+from django.urls import reverse_lazy
+from django.views.generic import TemplateView, View, CreateView, UpdateView, DeleteView
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import UserRegisterForm
-from .models import InventoryItem
+from .forms import UserRegisterForm, InventoryItemForm
+from .models import InventoryItem, Categoria
 
 class Index(TemplateView):
     template_name= 'inventory/index.html'
@@ -33,3 +34,32 @@ class SignUpView(View):
             return redirect('index')
 
         return render(request, 'inventory/signup.html', {'form': form})
+    
+
+class AddItem(LoginRequiredMixin, CreateView):
+    model = InventoryItem
+    form_class = InventoryItemForm
+    template_name = 'inventory/item_form.html'
+    success_url = reverse_lazy('dashboard')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categorias'] = Categoria.objects.all()
+        return context
+    
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+    
+class EditItem(LoginRequiredMixin, UpdateView):
+    model = InventoryItem
+    form_class = InventoryItemForm
+    template_name = 'inventory/item_form.html'
+    success_url = reverse_lazy('dashboard')
+
+
+class DeleteItem(LoginRequiredMixin, DeleteView):
+    model = InventoryItem
+    template_name = 'inventory/delete_item.html'
+    success_url = reverse_lazy('dashboard')
+    context_object_name = 'item'
